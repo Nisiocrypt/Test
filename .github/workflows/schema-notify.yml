@@ -1,73 +1,84 @@
-name: 🚨 Notificación de Cambio en Schemas
+# .github/workflows/notify-schema-changes.yml
+name: Notify Schema Changes
 
 on:
   push:
     paths:
-      - 'schemas/**'  # Vigila tu carpeta de schemas
+      - 'schemas/**'
+    branches:
+      - main
 
 jobs:
   notify-slack:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout del código
+      - name: Checkout
         uses: actions/checkout@v4
-      - name: Enviar notificación a Slack
-        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          fetch-depth: 2  # para comparar con commit anterior
+
+      - name: Get changed files
+        id: changed
+        run: |
+          FILES=$(git diff --name-only HEAD~1 HEAD -- schemas/ | tr '\n' ', ' | sed 's/,$//')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+      - name: Send Slack notification
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        with:
-          payload: |
-            {
-              "text": "",
-              "blocks": [
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "⚠️ Cambios Detectados en API Schemas",
-                    "emoji": true
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Autor:*\n${{ github.actor }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Rama:*\n${{ github.ref_name }}"
-                    }
-                  ]
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Mensaje del Commit:*"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ${{ toJSON(github.event.head_commit.message) }}
-                  }
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "Ver Cambios en GitHub",
-                        "emoji": true
-                      },
-                      "url": "${{ github.event.head_commit.url }}"
-                    }
-                  ]
+        run: |
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "blocks": [
+              {
+                "type": "header",
+                "text": {
+                  "type": "plain_text",
+                  "text": "⚠️ Schema Changes Detected",
+                  "emoji": true
                 }
-              ]
-            }
+              },
+              {
+                "type": "section",
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Repository:*\n${{ github.repository }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Branch:*\n${{ github.ref_name }}"
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Author:*\n${{ github.actor }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${GITHUB_SHA::7}>"
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Changed files:*\n\`${{ steps.changed.outputs.files }}\`"
+                }
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Message:*\n${{ github.event.head_commit.message }}"
+                }
+              }
+            ]
+          }
