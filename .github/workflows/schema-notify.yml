@@ -1,12 +1,9 @@
 name: 🚨 Notificación de Cambio en Schemas
 
-# El trigger define cuándo se ejecuta esto
 on:
   push:
-    branches:
-      - main        # O 'develop', según tu flujo de trabajo
     paths:
-      - 'schemas/**'  # <--- AQUÍ ESTÁ LA MAGIA. Solo se activa si cambia esta carpeta.
+      - 'schemas/**'  # Vigila tu carpeta de schemas
 
 jobs:
   notify-slack:
@@ -20,7 +17,8 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         with:
-          # Usamos un diseño personalizado "Block Kit" para que se vea profesional
+          # SOLUCIÓN: Usamos comillas simples para envolver todo el JSON en una sola línea.
+          # Esto evita que GitHub intente interpretar la estructura y la rompa.
           payload: |
             {
               "blocks": [
