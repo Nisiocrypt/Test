@@ -17,7 +17,6 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         with:
-          # El pipe '|' es CRUCIAL. Indica que lo que sigue es un bloque de texto literal.
           payload: |
             {
               "blocks": [
@@ -46,7 +45,14 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Mensaje del Commit:*\n${{ github.event.head_commit.message }}"
+                    "text": "*Mensaje del Commit:*"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ${{ toJSON(github.event.head_commit.message) }}
                   }
                 },
                 {
@@ -65,40 +71,5 @@ jobs:
                 }
               ]
             }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Autor:*\n${{ github.actor }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Rama:*\n${{ github.ref_name }}"
-                    }
-                  ]
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Mensaje del Commit:*\n${{ github.event.head_commit.message }}"
-                  }
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "Ver Cambios en GitHub",
-                        "emoji": true
-                      },
-                      "url": "${{ github.event.head_commit.url }}"
-                    }
-                  ]
-                }
               ]
             }
