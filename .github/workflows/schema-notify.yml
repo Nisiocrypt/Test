@@ -2,10 +2,12 @@ name: 🚨 Notificación de Cambio en Schemas
 
 # El trigger define cuándo se ejecuta esto
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches:
+      - main        # O 'develop', según tu flujo de trabajo
     paths:
-      - 'Test.py'
+      - 'schemas/**'  # <--- AQUÍ ESTÁ LA MAGIA. Solo se activa si cambia esta carpeta.
+
 jobs:
   notify-slack:
     runs-on: ubuntu-latest
